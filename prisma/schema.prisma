@@ -1,0 +1,168 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DB_URL")
+}
+
+// DONE: when employee/carOwner gets deleted - delete user entry
+// DONE: check update dto, if data exists before checking it
+// DONE: implement employee-offense feature
+// BUG: cannot delete offense if employee_offense exists
+
+// DONE:
+model Role {
+  id           Int         @default(autoincrement()) @id
+  name         String      @map("name") @unique
+
+  user         User[]
+
+  createdAt    DateTime    @map("created_at") @default(now())
+  updatedAt    DateTime    @map("updated_at") @updatedAt
+
+  @@map("role")
+}
+
+// DONE:
+model User {
+  id           Int         @default(autoincrement()) @id
+  password     String      @map("password")
+  login        String      @map("login") @unique
+
+  roleId       Int         @map("role_id") @default(1)
+  role         Role        @relation(fields: [roleId], references: [id], onDelete: Cascade)
+
+  employee     Employee?
+  carOwner     CarOwner?
+
+  createdAt    DateTime    @map("created_at") @default(now())
+  updatedAt    DateTime    @map("updated_at") @updatedAt
+
+  @@map("user")
+}
+
+// DONE:
+model Employee {
+  id                 Int             @default(autoincrement()) @id
+  firstName          String          @map("first_name")
+  lastName           String          @map("last_name")
+  middleName         String?         @map("middle_name")
+
+  rankId             Int             @map("rank_id")
+  rank               EmployeeRank    @relation(fields: [rankId], references: [id], onDelete: Cascade)
+
+  userId             Int             @map("user_id") @unique
+  user               User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  employeeOffense    EmployeeOffense[]
+  
+  createdAt          DateTime        @map("created_at") @default(now())
+  updatedAt          DateTime        @map("updated_at") @updatedAt
+
+  @@map("employee")
+}
+
+// DONE:
+model CarOwner {
+  id                 Int              @default(autoincrement()) @id
+  firstName          String           @map("first_name")
+  lastName           String           @map("last_name")
+  middleName         String?          @map("middle_name")
+
+  licenseStatusId    Int              @map("license_status_id")
+  licenseStatus      LicenseStatus    @relation(fields: [licenseStatusId], references: [id], onDelete: Cascade)
+
+  userId             Int              @map("user_id") @unique
+  user               User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  car                Car[]
+  offense            Offense[]
+  
+  createdAt          DateTime         @map("created_at") @default(now())
+  updatedAt          DateTime         @map("updated_at") @updatedAt
+
+  @@map("car_owner")
+}
+
+// DONE:
+model EmployeeRank {
+  id          Int         @default(autoincrement()) @id
+  name        String      @map("name")
+
+  employee    Employee[]
+  
+  createdAt   DateTime    @map("created_at") @default(now())
+  updatedAt   DateTime    @map("updated_at") @updatedAt
+
+  @@map("employee_rank")
+  @@unique([name])
+}
+
+// DONE:
+model Car {
+  id           Int         @default(autoincrement()) @id
+  brand        String?     @map("brand")
+  model        String?     @map("model")
+  color        String?     @map("color")
+  year         Int?        @map("year")
+
+  ownerId      Int         @map("owner_id")
+  owner        CarOwner    @relation(fields: [ownerId], references: [id], onDelete: Cascade)
+
+  offense      Offense[]
+  
+  createdAt    DateTime    @map("created_at") @default(now())
+  updatedAt    DateTime    @map("updated_at") @updatedAt
+
+  @@map("car")
+}
+
+// DONE:
+model Offense {
+  id                 Int         @default(autoincrement()) @id
+  title              String      @map("title")
+  description        String?     @map("description")
+  fine               Decimal     @map("fine") @default(0)
+
+  suspectId          Int         @map("suspect_id")
+  suspect            CarOwner    @relation(fields: [suspectId], references: [id], onDelete: Cascade)
+
+  carId              Int         @map("car_id")
+  car                Car         @relation(fields: [carId], references: [id], onDelete: Cascade)
+
+  employeeOffense    EmployeeOffense[]
+  
+  createdAt          DateTime    @map("created_at") @default(now())
+  updatedAt          DateTime    @map("updated_at") @updatedAt
+
+  @@map("offense")
+}
+
+// DONE:
+model LicenseStatus {
+  id           Int         @default(autoincrement()) @id
+  name         String      @map("name")
+
+  carOwner     CarOwner[]
+  
+  createdAt    DateTime    @map("created_at") @default(now())
+  updatedAt    DateTime    @map("updated_at") @updatedAt
+
+  @@map("license_status")
+  @@unique([name])
+}
+
+// DONE:
+model EmployeeOffense {
+  id           Int         @default(autoincrement()) @id
+
+  offenseId    Int         @map("offense_id")
+  offense      Offense     @relation(fields: [offenseId], references: [id], onDelete: Cascade)
+
+  employeeId   Int         @map("employee_id")
+  employee     Employee    @relation(fields: [employeeId], references: [id], onDelete: Cascade)
+
+  @@map("employee_offense")
+}
